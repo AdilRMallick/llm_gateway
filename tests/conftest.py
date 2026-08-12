@@ -58,9 +58,8 @@ def _settings_env(postgres: str, redis_url: str):
 
     get_settings.cache_clear()
 
-    from alembic.config import Config
-
     from alembic import command
+    from alembic.config import Config
 
     cfg = Config("alembic.ini")
     command.upgrade(cfg, "head")

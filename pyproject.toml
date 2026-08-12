@@ -21,7 +21,11 @@ dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "testcontainers[postgres,redis]>=4.8",
-    "ruff>=0.8",
+    # Pinned exactly, and CI installs from this extra rather than pinning its own
+    # version. A lint job that disagrees with local lint is worse than no lint job:
+    # `ruff>=0.8` locally against `ruff==0.8.*` in CI produced a green working tree
+    # and a red build, over an import-ordering rule the two versions read differently.
+    "ruff==0.16.2",
 ]
 
 [build-system]
@@ -42,3 +46,9 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+# The repo has an ./alembic directory holding migrations, which makes import
+# classification ambiguous: is `alembic` the local folder or the installed
+# package? Say so explicitly instead of letting each ruff version guess.
+known-third-party = ["alembic"]
