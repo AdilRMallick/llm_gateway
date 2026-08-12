@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# bench/results/*.json IS committed on purpose: the README cites those numbers,
+# and a claim you cannot re-derive from the repo is not evidence.

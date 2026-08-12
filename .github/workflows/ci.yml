@@ -1,0 +1,101 @@
+name: CI
+
+# Everything here runs on a clean clone with no API keys and no spend: the
+# providers are the mock service, and Postgres/Redis come from Testcontainers.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff==0.8.*
+      - run: ruff check .
+      - run: ruff format --check .
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: pytest (Testcontainers spins up Postgres + Redis)
+        run: pytest -q --durations=10
+
+  stack:
+    # The other job proves the code works. This one proves `docker compose up`
+    # works — including Envoy, TLS, the edge rate limit, and the migrations.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: docker compose up
+        run: docker compose up -d --build gateway envoy
+
+      - name: wait for the gateway and the edge
+        run: |
+          for url in http://localhost:8000/health http://localhost:8080/health; do
+            for i in $(seq 1 60); do
+              curl -sf "$url" >/dev/null && break
+              [ "$i" = 60 ] && { echo "timed out waiting for $url"; docker compose ps; exit 1; }
+              sleep 1
+            done
+          done
+
+      - name: smoke - one completion end to end
+        run: |
+          curl -sf -X POST http://localhost:8000/v1/chat \
+            -H 'content-type: application/json' \
+            -d '{"messages":[{"role":"user","content":"ci smoke"}],"policy":"cheapest"}' \
+            | tee /dev/stderr | grep -q '"provider"'
+
+      - name: edge - TLS and rate limiting through Envoy
+        run: |
+          pip install -e ".[dev]"
+          EDGE_URL=http://localhost:8080 EDGE_TLS_URL=https://localhost:8443 \
+            pytest tests/test_edge.py -q -rs
+
+      - name: artifact 2 - failover demo (asserts its own phases)
+        run: docker compose run --build --rm bench python -m bench.failover_demo
+
+      - name: artifact 1 - cache benchmark
+        run: >
+          docker compose run --build --rm -e BENCH_PROMPTS=20 -e BENCH_REPEATS=2
+          bench python -m bench.cache_bench
+
+      - name: artifact 3 - cost comparison
+        run: >
+          docker compose run --build --rm -e BENCH_COST_PROMPTS=20
+          bench python -m bench.cost_compare
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-results
+          path: bench/results/*.json
+
+      - name: logs on failure
+        if: failure()
+        run: docker compose logs --tail 200
+
+      - name: docker compose down
+        if: always()
+        run: docker compose down -v

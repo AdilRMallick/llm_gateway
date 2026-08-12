@@ -1,0 +1,259 @@
+{
+  "benchmark": "failover_demo",
+  "method": {
+    "runs": 100,
+    "warmups_discarded": 0,
+    "concurrency": 1,
+    "prompts": 100,
+    "mock_latency_ms": 40.0,
+    "notes": "temperature=0.7 so every request bypasses the cache and actually reaches a provider. Faults injected via the mock control plane; no real outage involved.",
+    "preexisting_rows": null,
+    "host": {
+      "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+      "python": "3.12.13",
+      "cpu_count": "12"
+    }
+  },
+  "phases": [
+    {
+      "phase": "phase 1 - all healthy",
+      "requests": 20,
+      "succeeded": 20,
+      "served_by": {
+        "openai": 20
+      },
+      "attempt_chains": {
+        "openai": 20
+      },
+      "mean_latency_ms": 48.81
+    },
+    {
+      "phase": "phase 2 - openai down",
+      "requests": 20,
+      "succeeded": 20,
+      "served_by": {
+        "google": 20
+      },
+      "attempt_chains": {
+        "openai->openai->google": 20
+      },
+      "mean_latency_ms": 160.09
+    },
+    {
+      "phase": "phase 3 - openai + google down",
+      "requests": 20,
+      "succeeded": 20,
+      "served_by": {
+        "anthropic": 20
+      },
+      "attempt_chains": {
+        "openai->openai->google->google->anthropic": 20
+      },
+      "mean_latency_ms": 295.74
+    },
+    {
+      "phase": "phase 4 - total outage",
+      "requests": 20,
+      "succeeded": 0,
+      "served_by": {},
+      "attempt_chains": {
+        "openai->openai->google->google->anthropic->anthropic": 20
+      },
+      "mean_latency_ms": 367.98
+    },
+    {
+      "phase": "phase 5 - recovered",
+      "requests": 20,
+      "succeeded": 20,
+      "served_by": {
+        "openai": 20
+      },
+      "attempt_chains": {
+        "openai": 20
+      },
+      "mean_latency_ms": 49.32
+    }
+  ],
+  "recent_rows": [
+    {
+      "request_id": "c4cdffd0-bb34-426b-9872-df8a71b0a254",
+      "ts": "2026-08-12T01:08:37.664079+00:00",
+      "route_policy": "cheapest",
+      "provider_attempted": [
+        "openai"
+      ],
+      "provider_served": "openai",
+      "model_served": "gpt-4o-mini",
+      "cache_hit": false,
+      "latency_ms": 47,
+      "tokens_in": 9,
+      "tokens_out": 39,
+      "usage_estimated": false,
+      "cost_usd": 2.475e-05,
+      "status": "ok",
+      "failover_reason": null
+    },
+    {
+      "request_id": "bc4f35a7-b370-4ec2-beb3-9117ab53ff23",
+      "ts": "2026-08-12T01:08:37.614664+00:00",
+      "route_policy": "cheapest",
+      "provider_attempted": [
+        "openai"
+      ],
+      "provider_served": "openai",
+      "model_served": "gpt-4o-mini",
+      "cache_hit": false,
+      "latency_ms": 47,
+      "tokens_in": 9,
+      "tokens_out": 39,
+      "usage_estimated": false,
+      "cost_usd": 2.475e-05,
+      "status": "ok",
+      "failover_reason": null
+    },
+    {
+      "request_id": "49acc1f9-b9db-4e43-a820-2de0391ff7bb",
+      "ts": "2026-08-12T01:08:37.565051+00:00",
+      "route_policy": "cheapest",
+      "provider_attempted": [
+        "openai"
+      ],
+      "provider_served": "openai",
+      "model_served": "gpt-4o-mini",
+      "cache_hit": false,
+      "latency_ms": 47,
+      "tokens_in": 9,
+      "tokens_out": 39,
+      "usage_estimated": false,
+      "cost_usd": 2.475e-05,
+      "status": "ok",
+      "failover_reason": null
+    },
+    {
+      "request_id": "fe504e89-a414-4f00-9d6f-5c9fb6abb442",
+      "ts": "2026-08-12T01:08:37.515487+00:00",
+      "route_policy": "cheapest",
+      "provider_attempted": [
+        "openai"
+      ],
+      "provider_served": "openai",
+      "model_served": "gpt-4o-mini",
+      "cache_hit": false,
+      "latency_ms": 46,
+      "tokens_in": 9,
+      "tokens_out": 39,
+      "usage_estimated": false,
+      "cost_usd": 2.475e-05,
+      "status": "ok",
+      "failover_reason": null
+    },
+    {
+      "request_id": "2e73fdb7-7183-49f9-a60c-a5e14b326c5f",
+      "ts": "2026-08-12T01:08:37.466466+00:00",
+      "route_policy": "cheapest",
+      "provider_attempted": [
+        "openai"
+      ],
+      "provider_served": "openai",
+      "model_served": "gpt-4o-mini",
+      "cache_hit": false,
+      "latency_ms": 46,
+      "tokens_in": 9,
+      "tokens_out": 39,
+      "usage_estimated": false,
+      "cost_usd": 2.475e-05,
+      "status": "ok",
+      "failover_reason": null
+    },
+    {
+      "request_id": "89186b9f-b225-46c2-9fce-be13999a1afb",
+      "ts": "2026-08-12T01:08:37.417551+00:00",
+      "route_policy": "cheapest",
+      "provider_attempted": [
+        "openai"
+      ],
+      "provider_served": "openai",
+      "model_served": "gpt-4o-mini",
+      "cache_hit": false,
+      "latency_ms": 45,
+      "tokens_in": 9,
+      "tokens_out": 39,
+      "usage_estimated": false,
+      "cost_usd": 2.475e-05,
+      "status": "ok",
+      "failover_reason": null
+    },
+    {
+      "request_id": "9b679830-ad05-4f4a-a42c-13f5e449e46c",
+      "ts": "2026-08-12T01:08:37.369334+00:00",
+      "route_policy": "cheapest",
+      "provider_attempted": [
+        "openai"
+      ],
+      "provider_served": "openai",
+      "model_served": "gpt-4o-mini",
+      "cache_hit": false,
+      "latency_ms": 46,
+      "tokens_in": 9,
+      "tokens_out": 39,
+      "usage_estimated": false,
+      "cost_usd": 2.475e-05,
+      "status": "ok",
+      "failover_reason": null
+    },
+    {
+      "request_id": "c114c053-9509-44c8-af82-fa9a0311440b",
+      "ts": "2026-08-12T01:08:37.320225+00:00",
+      "route_policy": "cheapest",
+      "provider_attempted": [
+        "openai"
+      ],
+      "provider_served": "openai",
+      "model_served": "gpt-4o-mini",
+      "cache_hit": false,
+      "latency_ms": 47,
+      "tokens_in": 9,
+      "tokens_out": 39,
+      "usage_estimated": false,
+      "cost_usd": 2.475e-05,
+      "status": "ok",
+      "failover_reason": null
+    },
+    {
+      "request_id": "70c891da-66c7-4d3f-89b9-a1d45e5242d4",
+      "ts": "2026-08-12T01:08:37.270845+00:00",
+      "route_policy": "cheapest",
+      "provider_attempted": [
+        "openai"
+      ],
+      "provider_served": "openai",
+      "model_served": "gpt-4o-mini",
+      "cache_hit": false,
+      "latency_ms": 47,
+      "tokens_in": 9,
+      "tokens_out": 39,
+      "usage_estimated": false,
+      "cost_usd": 2.475e-05,
+      "status": "ok",
+      "failover_reason": null
+    },
+    {
+      "request_id": "f3f65eb8-b8fa-4dc9-bff6-253b9e7bf49b",
+      "ts": "2026-08-12T01:08:37.221523+00:00",
+      "route_policy": "cheapest",
+      "provider_attempted": [
+        "openai"
+      ],
+      "provider_served": "openai",
+      "model_served": "gpt-4o-mini",
+      "cache_hit": false,
+      "latency_ms": 47,
+      "tokens_in": 9,
+      "tokens_out": 39,
+      "usage_estimated": false,
+      "cost_usd": 2.475e-05,
+      "status": "ok",
+      "failover_reason": null
+    }
+  ]
+}

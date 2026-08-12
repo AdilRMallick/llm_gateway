@@ -1,0 +1,20 @@
+# Overlay for talking to a real provider instead of the mock.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.live.yml up -d gateway
+#
+# Compose auto-loads .env for ${VAR} substitution in this file, which is how the
+# key gets from .env into the container — the app never reads .env itself, since
+# .env is not copied into the image (and must not be).
+#
+# Setting a base URL to "" makes the adapter fall back to the provider's real
+# endpoint; leaving it pointed at mock-provider keeps that provider mocked. So
+# this file gives you a live Google and a mocked OpenAI/Anthropic, which is also
+# the most useful shape for testing failover against a real provider.
+
+services:
+  gateway:
+    environment:
+      GATEWAY_GOOGLE_BASE_URL: ""
+      GATEWAY_GOOGLE_API_KEY: ${GATEWAY_GOOGLE_API_KEY:?set GATEWAY_GOOGLE_API_KEY in .env}
+      # Real network calls are slower and more variable than the mock.
+      GATEWAY_REQUEST_TIMEOUT_S: "60"

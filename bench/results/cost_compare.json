@@ -1,0 +1,87 @@
+{
+  "benchmark": "cost_compare",
+  "method": {
+    "runs": 360,
+    "warmups_discarded": 0,
+    "concurrency": 1,
+    "prompts": 60,
+    "mock_latency_ms": 20.0,
+    "notes": "Seeded workload (seed=42) replayed per scenario. Costs are the sum of per-request accounting rows, priced from app/pricing.py.",
+    "preexisting_rows": null,
+    "host": {
+      "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+      "python": "3.12.13",
+      "cpu_count": "12"
+    }
+  },
+  "scenarios": [
+    {
+      "scenario": "pinned: anthropic",
+      "requests": 60,
+      "served_by": "anthropicx60",
+      "cache_hits": 0,
+      "tokens_in": 1478,
+      "tokens_out": 3406,
+      "cost_usd": 0.018508,
+      "cost_per_1k_requests_usd": 0.3085,
+      "vs_most_expensive": "baseline"
+    },
+    {
+      "scenario": "pinned: openai",
+      "requests": 60,
+      "served_by": "openaix60",
+      "cache_hits": 0,
+      "tokens_in": 1426,
+      "tokens_out": 3262,
+      "cost_usd": 0.002171,
+      "cost_per_1k_requests_usd": 0.0362,
+      "vs_most_expensive": "-88.3%"
+    },
+    {
+      "scenario": "pinned: google",
+      "requests": 60,
+      "served_by": "googlex60",
+      "cache_hits": 0,
+      "tokens_in": 1426,
+      "tokens_out": 3398,
+      "cost_usd": 0.008923,
+      "cost_per_1k_requests_usd": 0.1487,
+      "vs_most_expensive": "-51.8%"
+    },
+    {
+      "scenario": "fastest",
+      "requests": 60,
+      "served_by": "openaix60",
+      "cache_hits": 0,
+      "tokens_in": 1352,
+      "tokens_out": 3158,
+      "cost_usd": 0.002098,
+      "cost_per_1k_requests_usd": 0.035,
+      "vs_most_expensive": "-88.7%"
+    },
+    {
+      "scenario": "cheapest",
+      "requests": 60,
+      "served_by": "openaix60",
+      "cache_hits": 0,
+      "tokens_in": 1358,
+      "tokens_out": 3166,
+      "cost_usd": 0.002103,
+      "cost_per_1k_requests_usd": 0.0351,
+      "vs_most_expensive": "-88.6%"
+    },
+    {
+      "scenario": "cheapest + cache",
+      "requests": 60,
+      "served_by": "openaix60",
+      "cache_hits": 30,
+      "tokens_in": 1462,
+      "tokens_out": 3272,
+      "cost_usd": 0.001091,
+      "cost_per_1k_requests_usd": 0.0182,
+      "vs_most_expensive": "-94.1%"
+    }
+  ],
+  "cheapest_vs_worst_pinned_pct": 88.6,
+  "pricing_as_of": "2026-08"
+}

@@ -1,0 +1,51 @@
+{
+  "benchmark": "cache_bench",
+  "method": {
+    "runs": 250,
+    "warmups_discarded": 10,
+    "concurrency": 1,
+    "prompts": 50,
+    "mock_latency_ms": 120.0,
+    "notes": "Sequential client. Cold = first call per prompt; warm = same prompts replayed. Accounting rows are written off the request path, so these times are the served path only.",
+    "preexisting_rows": 0,
+    "host": {
+      "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+      "python": "3.12.13",
+      "cpu_count": "12"
+    }
+  },
+  "cold_ms": {
+    "n": 50,
+    "p50": 127.64,
+    "p95": 129.61,
+    "p99": 131.01,
+    "mean": 127.79,
+    "min": 126.32,
+    "max": 131.01
+  },
+  "warm_ms": {
+    "n": 200,
+    "p50": 3.48,
+    "p95": 4.92,
+    "p99": 6.74,
+    "mean": 3.65,
+    "min": 2.63,
+    "max": 8.19
+  },
+  "speedup_p50": 36.7,
+  "speedup_p95": 26.3,
+  "server_side": [
+    {
+      "cache_hit": false,
+      "requests": 60,
+      "p50_ms": 125.0,
+      "p95_ms": 126.05
+    },
+    {
+      "cache_hit": true,
+      "requests": 200,
+      "p50_ms": 1.0,
+      "p95_ms": 2.0
+    }
+  ]
+}
