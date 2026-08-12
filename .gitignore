@@ -9,3 +9,10 @@ venv/
 
 # bench/results/*.json IS committed on purpose: the README cites those numbers,
 # and a claim you cannot re-derive from the repo is not evidence.
+
+# Personal working notes and the original planning document. Kept on disk,
+# deliberately not published: they are about why the project was built rather
+# than what it does, which is nobody else's business and reads badly to anyone
+# who finds it.
+notes/
+llm-gateway-spec.md
