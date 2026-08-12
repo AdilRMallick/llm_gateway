@@ -1,0 +1,6 @@
+# The container entrypoint must keep LF endings; a CRLF checkout on Windows makes
+# the image fail to start with a confusing "no such file or directory".
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf

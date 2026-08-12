@@ -1,0 +1,120 @@
+name: llm-gateway
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: gateway
+      POSTGRES_PASSWORD: gateway
+      POSTGRES_DB: gateway
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gateway -d gateway"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  mock-provider:
+    build: .
+    command: ["uvicorn", "mock_provider.main:app", "--host", "0.0.0.0", "--port", "9000"]
+    environment:
+      RUN_MIGRATIONS: "0"
+    ports: ["9000:9000"]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://localhost:9000/health')\""]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  gateway:
+    build: .
+    environment:
+      GATEWAY_DATABASE_URL: postgresql+asyncpg://gateway:gateway@postgres:5432/gateway
+      GATEWAY_REDIS_URL: redis://redis:6379/0
+      # Unset these three to talk to the real provider APIs instead.
+      GATEWAY_ANTHROPIC_BASE_URL: http://mock-provider:9000/anthropic
+      GATEWAY_OPENAI_BASE_URL: http://mock-provider:9000/openai
+      GATEWAY_GOOGLE_BASE_URL: http://mock-provider:9000/google
+      GATEWAY_LOG_LEVEL: INFO
+    # Exposed directly as well as behind Envoy: the benchmarks measure the
+    # gateway, and going through the edge rate limiter would measure Envoy.
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      mock-provider: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # Benchmark client, run inside the compose network:
+  #   docker compose run --build --rm bench python -m bench.cache_bench
+  #
+  # Pass --build. This service sits behind a profile, so a plain `up --build`
+  # skips it and `run` will happily reuse a stale image — which silently gave a
+  # benchmark an out-of-date copy of app/pricing.py exactly once.
+  # From the Windows host, Docker Desktop's port forward adds ~70ms per request,
+  # which is larger than the effect being measured. In-network the client sees
+  # what the gateway actually costs.
+  bench:
+    build: .
+    profiles: ["bench"]
+    environment:
+      RUN_MIGRATIONS: "0"
+      GATEWAY_URL: http://gateway:8000
+      MOCK_URL: http://mock-provider:9000
+      PYTHONPATH: /srv
+    volumes:
+      - ./bench:/srv/bench
+    depends_on:
+      gateway: {condition: service_healthy}
+    command: ["python", "-m", "bench.cache_bench"]
+
+  # Self-signed cert for local TLS, regenerated on every `up`. It lives in a named
+  # volume rather than a host bind mount so the bytes Envoy reads are the bytes
+  # openssl wrote — a bind mount round-trips through the Docker Desktop VM's
+  # filesystem cache and Envoy can catch a half-written key.
+  certgen:
+    image: alpine/openssl:latest
+    volumes: ["certs:/certs"]
+    # openssl writes the key 0600 root-owned; the Envoy image runs as uid 101 and
+    # reports an unreadable key as "incomplete private key", which is a long way
+    # to travel for a permission bit.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        openssl req -x509 -nodes -newkey rsa:2048
+        -keyout /certs/key.pem -out /certs/cert.pem
+        -days 365 -subj /CN=localhost 2>/dev/null
+        && chmod 644 /certs/key.pem /certs/cert.pem
+        && echo "certs ready"
+
+  envoy:
+    image: envoyproxy/envoy:v1.31-latest
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - certs:/etc/envoy/certs:ro
+    ports:
+      - "8443:8443"   # TLS
+      - "8080:8080"   # plaintext, same filter chain
+      - "9901:9901"   # admin
+    depends_on:
+      gateway: {condition: service_healthy}
+      certgen: {condition: service_completed_successfully}
+
+volumes:
+  pgdata:
+  certs:
